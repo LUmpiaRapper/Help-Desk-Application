@@ -138,12 +138,3 @@ CREATE POLICY "attachments can read" ON storage.objects
   FOR SELECT
   USING (bucket_id = 'attachments' AND auth.role() = 'authenticated');
 
--- 6. NOTIFICATION WEBHOOK SETUP (optional)
--- To trigger the send-notification Edge Function on ticket changes:
--- Go to Supabase Dashboard → Database → Webhooks → Create
---   Table: tickets
---   Events: INSERT, UPDATE
---   Target: Edge Function "send-notification"
--- Then set RESEND_API_KEY + APP_URL in Edge Function secrets.
---
--- Or trigger manually by POSTing to the function URL.
