@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { useToast } from '../contexts/ToastContext'
 
 export default function CreateTicket() {
   const { user } = useAuth()
+  const { addToast } = useToast()
   const navigate = useNavigate()
   const [categories, setCategories] = useState([])
   const [title, setTitle] = useState('')
@@ -41,13 +43,18 @@ export default function CreateTicket() {
     if (error) {
       setSubmitError(error.message)
       setSubmitting(false)
+      addToast(error.message, 'error')
       return
     }
 
     if (files.length > 0) {
       for (const file of files) {
         const filePath = `tickets/${ticket.id}/${file.name}`
-        await supabase.storage.from('attachments').upload(filePath, file)
+        const { error: uploadError } = await supabase.storage.from('attachments').upload(filePath, file)
+        if (uploadError) {
+          addToast(`File upload failed: ${uploadError.message}`, 'warning')
+          continue
+        }
         await supabase.from('attachments').insert({
           ticket_id: ticket.id,
           user_id: user.id,
@@ -57,6 +64,7 @@ export default function CreateTicket() {
       }
     }
 
+    addToast('Ticket created successfully', 'success')
     navigate(`/tickets/${ticket.id}`)
   }
 

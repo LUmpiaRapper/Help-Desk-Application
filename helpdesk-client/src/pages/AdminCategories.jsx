@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useToast } from '../contexts/ToastContext'
+import ConfirmModal from '../components/ConfirmModal'
 
 export default function AdminCategories() {
+  const { addToast } = useToast()
   const [categories, setCategories] = useState([])
   const [name, setName] = useState('')
   const [slaHours, setSlaHours] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   useEffect(() => {
     supabase.from('categories').select('*').order('name').then(({ data }) => {
@@ -16,23 +20,33 @@ export default function AdminCategories() {
     e.preventDefault()
     if (!name || !slaHours) return
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('categories')
       .insert({ name, sla_hours: parseInt(slaHours) })
       .select()
       .single()
 
-    if (data) {
+    if (error) {
+      addToast(`Failed to create category: ${error.message}`, 'error')
+    } else if (data) {
       setCategories([...categories, data])
       setName('')
       setSlaHours('')
+      addToast('Category created', 'success')
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this category?')) return
-    await supabase.from('categories').delete().eq('id', id)
-    setCategories(categories.filter((c) => c.id !== id))
+  async function handleDelete() {
+    if (!deleteTarget) return
+    const id = deleteTarget
+    setDeleteTarget(null)
+    const { error } = await supabase.from('categories').delete().eq('id', id)
+    if (error) {
+      addToast(`Delete failed: ${error.message}`, 'error')
+    } else {
+      setCategories(categories.filter((c) => c.id !== id))
+      addToast('Category deleted', 'success')
+    }
   }
 
   return (
@@ -89,7 +103,7 @@ export default function AdminCategories() {
                   <td className="px-4 py-3 text-sm text-gray-500">{cat.sla_hours}h</td>
                   <td className="px-4 py-3 text-right">
                     <button
-                      onClick={() => handleDelete(cat.id)}
+                      onClick={() => setDeleteTarget(cat.id)}
                       className="text-sm text-red-600 hover:text-red-500"
                     >
                       Delete
@@ -101,6 +115,15 @@ export default function AdminCategories() {
           </table>
         )}
       </div>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete category"
+        message="Are you sure you want to delete this category?"
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

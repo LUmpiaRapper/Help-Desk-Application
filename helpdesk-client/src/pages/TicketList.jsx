@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { SkeletonTable } from '../components/Skeleton'
 
 export default function TicketList() {
   const { role } = useAuth()
@@ -26,8 +27,12 @@ export default function TicketList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-7 w-32 bg-gray-200 rounded animate-pulse" />
+          <div className="h-10 w-28 bg-gray-200 rounded animate-pulse" />
+        </div>
+        <SkeletonTable />
       </div>
     )
   }

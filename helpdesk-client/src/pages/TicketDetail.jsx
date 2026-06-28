@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { useToast } from '../contexts/ToastContext'
+import ConfirmModal from '../components/ConfirmModal'
+import { SkeletonDetail } from '../components/Skeleton'
 
 const STATUSES = ['open', 'in_progress', 'resolved', 'closed']
 
 export default function TicketDetail() {
   const { id } = useParams()
   const { user, role } = useAuth()
+  const { addToast } = useToast()
   const navigate = useNavigate()
   const [ticket, setTicket] = useState(null)
   const [comments, setComments] = useState([])
@@ -19,6 +23,7 @@ export default function TicketDetail() {
   const [slaCountdown, setSlaCountdown] = useState('')
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState('')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const isStaff = role === 'technician' || role === 'admin'
   const canAssign = role === 'admin'
@@ -93,8 +98,11 @@ export default function TicketDetail() {
       })
       .eq('id', id)
 
-    if (!error) {
+    if (error) {
+      addToast(`Status update failed: ${error.message}`, 'error')
+    } else {
       setTicket({ ...ticket, status: newStatus })
+      addToast(`Status changed to ${newStatus.replace('_', ' ')}`, 'success')
     }
   }
 
@@ -105,8 +113,11 @@ export default function TicketDetail() {
       .update({ assignee_id: assigneeId || null })
       .eq('id', id)
 
-    if (!error) {
+    if (error) {
+      addToast(`Assignment failed: ${error.message}`, 'error')
+    } else {
       setTicket({ ...ticket, assignee_id: assigneeId })
+      addToast('Ticket assigned successfully', 'success')
       loadTicket()
     }
   }
@@ -126,25 +137,29 @@ export default function TicketDetail() {
       .select('*, user:user_id(name, role)')
       .single()
 
-    if (!error) {
+    if (error) {
+      addToast(`Failed to post comment: ${error.message}`, 'error')
+    } else {
       setComments([...comments, data])
       setNewComment('')
       setIsInternal(false)
+      addToast('Comment posted', 'success')
     }
   }
 
   async function handleDelete() {
-    if (!confirm('Delete this ticket?')) return
-    await supabase.from('tickets').delete().eq('id', id)
-    navigate('/tickets')
+    setShowDeleteModal(false)
+    const { error } = await supabase.from('tickets').delete().eq('id', id)
+    if (error) {
+      addToast(`Delete failed: ${error.message}`, 'error')
+    } else {
+      addToast('Ticket deleted', 'success')
+      navigate('/tickets')
+    }
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-      </div>
-    )
+    return <SkeletonDetail />
   }
 
   if (!ticket) {
@@ -263,11 +278,20 @@ export default function TicketDetail() {
 
         {(role === 'admin') && (
           <div className="border-t border-gray-100 pt-4">
-            <button onClick={handleDelete} className="text-sm text-red-600 hover:text-red-500">
+            <button onClick={() => setShowDeleteModal(true)} className="text-sm text-red-600 hover:text-red-500">
               Delete ticket
             </button>
           </div>
         )}
+
+      <ConfirmModal
+        open={showDeleteModal}
+        title="Delete ticket"
+        message={`Are you sure you want to delete "${ticket.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">

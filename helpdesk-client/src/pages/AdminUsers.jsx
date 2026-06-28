@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useToast } from '../contexts/ToastContext'
 
 export default function AdminUsers() {
+  const { addToast } = useToast()
   const [users, setUsers] = useState([])
 
   useEffect(() => {
@@ -13,10 +15,11 @@ export default function AdminUsers() {
   async function handleRoleChange(userId, newRole) {
     const { error } = await supabase.from('users').update({ role: newRole }).eq('id', userId)
     if (error) {
-      alert(`Failed to update role: ${error.message}`)
+      addToast(`Failed to update role: ${error.message}`, 'error')
       return
     }
     setUsers(users.map((u) => (u.id === userId ? { ...u, role: newRole } : u)))
+    addToast('Role updated successfully', 'success')
   }
 
   return (

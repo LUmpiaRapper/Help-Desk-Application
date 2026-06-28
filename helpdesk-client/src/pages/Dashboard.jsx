@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { SkeletonCard } from '../components/Skeleton'
 
 export default function Dashboard() {
   const { user, role } = useAuth()
@@ -56,8 +57,13 @@ export default function Dashboard() {
 
   if (!stats) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+      <div className="space-y-6">
+        <div className="h-7 w-48 bg-gray-200 rounded animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          {role === 'admin' && <SkeletonCard />}
+        </div>
       </div>
     )
   }
