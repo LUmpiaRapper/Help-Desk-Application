@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useRateLimit } from '../hooks/useRateLimit'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -8,11 +9,13 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const { limited, remaining, resetIn, increment } = useRateLimit('login')
   const { signIn } = useAuth()
   const navigate = useNavigate()
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (limited) return
     setError('')
     setSubmitting(true)
     try {
@@ -21,6 +24,7 @@ export default function Login() {
     } catch (err) {
       setError(err.message)
       setSubmitting(false)
+      increment()
     }
   }
 
@@ -88,10 +92,14 @@ export default function Login() {
             <div className="flex items-center justify-between">
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || limited}
                 className="flex-1 py-2 px-4 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
               >
-                {submitting ? 'Signing in...' : 'Sign in'}
+                {limited
+                  ? `Try again in ${Math.ceil(resetIn / 1000)}s`
+                  : submitting
+                    ? 'Signing in...'
+                    : `Sign in (${remaining})`}
               </button>
             </div>
           </form>

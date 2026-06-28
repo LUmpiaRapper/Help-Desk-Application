@@ -2,15 +2,18 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Mail, ArrowLeft } from 'lucide-react'
+import { useRateLimit } from '../hooks/useRateLimit'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const { limited, remaining, resetIn, increment } = useRateLimit('forgot_password')
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (limited) return
     setError('')
     setLoading(true)
 
@@ -21,6 +24,8 @@ export default function ForgotPassword() {
     setLoading(false)
     if (sendError) {
       setError(sendError.message)
+      setLoading(false)
+      increment()
     } else {
       setSent(true)
     }
@@ -82,10 +87,14 @@ export default function ForgotPassword() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || limited}
               className="w-full py-2 px-4 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
             >
-              {loading ? 'Sending...' : 'Send reset link'}
+              {limited
+                ? `Try again in ${Math.ceil(resetIn / 1000)}s`
+                : loading
+                  ? 'Sending...'
+                  : `Send reset link (${remaining})`}
             </button>
           </form>
 

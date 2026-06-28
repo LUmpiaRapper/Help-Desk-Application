@@ -138,3 +138,69 @@ CREATE POLICY "attachments can read" ON storage.objects
   FOR SELECT
   USING (bucket_id = 'attachments' AND auth.role() = 'authenticated');
 
+-- 6. PUBLIC RATE LIMITS (unauthenticated actions: login, register, forgot-password)
+
+CREATE TABLE IF NOT EXISTS public.public_rate_limits (
+  id            BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  fingerprint   TEXT NOT NULL,
+  action        TEXT NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_public_rate_limits_lookup
+  ON public.public_rate_limits(fingerprint, action, created_at);
+
+CREATE OR REPLACE FUNCTION public.check_public_rate_limit(p_fingerprint TEXT, p_action TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_max      INT;
+  v_interval INTERVAL;
+  v_count    INT;
+BEGIN
+  v_max := CASE p_action
+    WHEN 'login' THEN 5
+    WHEN 'register' THEN 3
+    WHEN 'forgot_password' THEN 3
+    ELSE 10
+  END;
+  v_interval := CASE p_action
+    WHEN 'login' THEN INTERVAL '5 minutes'
+    WHEN 'register' THEN INTERVAL '10 minutes'
+    WHEN 'forgot_password' THEN INTERVAL '10 minutes'
+    ELSE INTERVAL '1 hour'
+  END;
+
+  DELETE FROM public.public_rate_limits
+  WHERE fingerprint = p_fingerprint
+    AND action = p_action
+    AND created_at < NOW() - v_interval;
+
+  SELECT COUNT(*) INTO v_count
+  FROM public.public_rate_limits
+  WHERE fingerprint = p_fingerprint
+    AND action = p_action
+    AND created_at >= NOW() - v_interval;
+
+  IF v_count >= v_max THEN
+    RETURN jsonb_build_object(
+      'allowed', false,
+      'remaining', 0,
+      'reset_in', EXTRACT(EPOCH FROM (MIN(created_at) + v_interval - NOW())) * 1000
+    );
+  END IF;
+
+  INSERT INTO public.public_rate_limits (fingerprint, action)
+  VALUES (p_fingerprint, p_action);
+
+  RETURN jsonb_build_object(
+    'allowed', true,
+    'remaining', v_max - v_count - 1,
+    'reset_in', 0
+  );
+END;
+$$;
+

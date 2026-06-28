@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useRateLimit } from '../hooks/useRateLimit'
 
 export default function Register() {
   const [name, setName] = useState('')
@@ -10,11 +11,13 @@ export default function Register() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const { limited, remaining, resetIn, increment } = useRateLimit('register')
   const { signUp } = useAuth()
   const navigate = useNavigate()
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (limited) return
     setError('')
     setSubmitting(true)
     try {
@@ -23,6 +26,7 @@ export default function Register() {
     } catch (err) {
       setError(err.message)
       setSubmitting(false)
+      increment()
     }
   }
 
@@ -128,10 +132,14 @@ export default function Register() {
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || limited}
               className="w-full py-2 px-4 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
             >
-              {submitting ? 'Signing up...' : 'Sign up'}
+              {limited
+                ? `Try again in ${Math.ceil(resetIn / 1000)}s`
+                : submitting
+                  ? 'Signing up...'
+                  : `Sign up (${remaining})`}
             </button>
           </form>
 
