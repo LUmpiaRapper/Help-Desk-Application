@@ -1,26 +1,29 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { useToast } from '../contexts/ToastContext'
 
-export default function Login() {
-  const [email, setEmail] = useState('')
+export default function ResetPassword() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const { signIn } = useAuth()
+  const { addToast } = useToast()
   const navigate = useNavigate()
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    setSubmitting(true)
-    try {
-      await signIn(email, password)
-      navigate('/dashboard')
-    } catch (err) {
-      setError(err.message)
-      setSubmitting(false)
+    setLoading(true)
+
+    const { error: updateError } = await supabase.auth.updateUser({ password })
+
+    setLoading(false)
+    if (updateError) {
+      setError(updateError.message)
+    } else {
+      addToast('Password updated successfully', 'success')
+      navigate('/login')
     }
   }
 
@@ -28,9 +31,12 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
       <div className="w-full max-w-sm">
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-8">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-8">
-            Sign in to Helpdesk
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">
+            Set new password
           </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-8">
+            Enter your new password below
+          </p>
 
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400">
@@ -41,35 +47,22 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Password
+                New password
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="••••••••"
                   required
+                  minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -85,29 +78,14 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 py-2 px-4 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-              >
-                {submitting ? 'Signing in...' : 'Sign in'}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2 px-4 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Updating...' : 'Update password'}
+            </button>
           </form>
-
-          <div className="mt-4 text-center">
-            <Link to="/forgot-password" className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium">
-              Forgot password?
-            </Link>
-          </div>
-
-          <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
-            Don&apos;t have an account?{' '}
-            <Link to="/register" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium">
-              Sign up
-            </Link>
-          </p>
         </div>
       </div>
     </div>

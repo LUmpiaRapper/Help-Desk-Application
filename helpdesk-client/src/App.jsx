@@ -15,6 +15,8 @@ const AdminUsers = lazy(() => import('./pages/AdminUsers'))
 const AdminCategories = lazy(() => import('./pages/AdminCategories'))
 const AdminReports = lazy(() => import('./pages/AdminReports'))
 const NotFound = lazy(() => import('./pages/NotFound'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 
 const queryClient = new QueryClient()
 
@@ -31,6 +33,8 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route
                 path="/dashboard"
                 element={

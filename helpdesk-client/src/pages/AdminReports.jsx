@@ -14,15 +14,24 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend)
 
+const isDark = () => document.documentElement.classList.contains('dark')
+
+const chartTextColor = () => isDark() ? '#94a3b8' : '#6b7280'
+const chartGridColor = () => isDark() ? '#334155' : '#e5e7eb'
+
 export default function AdminReports() {
   const [metrics, setMetrics] = useState(null)
   const [dailyData, setDailyData] = useState(null)
   const [categoryData, setCategoryData] = useState(null)
+  const [, setTick] = useState(0)
 
   useEffect(() => {
     loadMetrics()
     loadDailyChart()
     loadCategoryChart()
+    const observer = new MutationObserver(() => setTick((t) => t + 1))
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
   }, [])
 
   async function loadMetrics() {
@@ -143,37 +152,37 @@ export default function AdminReports() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
         <button
           onClick={exportCsv}
-          className="px-4 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+          className="px-4 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-colors"
         >
           Export CSV
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-sm text-gray-500">Total Tickets</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{metrics?.total ?? 0}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Total Tickets</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{metrics?.total ?? 0}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-sm text-gray-500">Open Now</p>
-          <p className="text-3xl font-bold text-amber-600 mt-1">{metrics?.open ?? 0}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Open Now</p>
+          <p className="text-3xl font-bold text-amber-600 dark:text-amber-400 mt-1">{metrics?.open ?? 0}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-sm text-gray-500">Avg MTTR</p>
-          <p className="text-3xl font-bold text-indigo-600 mt-1">{metrics?.avgMttr ?? '—'}h</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Avg MTTR</p>
+          <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">{metrics?.avgMttr ?? '—'}h</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-sm text-gray-500">SLA Breached</p>
-          <p className="text-3xl font-bold text-red-600 mt-1">{metrics?.breached ?? 0}</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+          <p className="text-sm text-gray-500 dark:text-gray-400">SLA Breached</p>
+          <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-1">{metrics?.breached ?? 0}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Tickets per Day (30 days)</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Tickets per Day (30 days)</h2>
           {dailyData ? (
             <Bar
               data={dailyData}
@@ -181,18 +190,18 @@ export default function AdminReports() {
                 responsive: true,
                 plugins: { legend: { display: false } },
                 scales: {
-                  x: { ticks: { maxTicksLimit: 15, font: { size: 10 } } },
-                  y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } },
+                  x: { ticks: { maxTicksLimit: 15, font: { size: 10 }, color: chartTextColor() }, grid: { color: chartGridColor() } },
+                  y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 }, color: chartTextColor() }, grid: { color: chartGridColor() } },
                 },
               }}
             />
           ) : (
-            <p className="text-sm text-gray-500 text-center py-8">No data yet.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">No data yet.</p>
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Tickets by Category</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Tickets by Category</h2>
           {categoryData ? (
             <div className="max-w-xs mx-auto">
               <Pie
@@ -200,13 +209,13 @@ export default function AdminReports() {
                 options={{
                   responsive: true,
                   plugins: {
-                    legend: { position: 'bottom', labels: { font: { size: 11 } } },
+                    legend: { position: 'bottom', labels: { font: { size: 11 }, color: chartTextColor() } },
                   },
                 }}
               />
             </div>
           ) : (
-            <p className="text-sm text-gray-500 text-center py-8">No data yet.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">No data yet.</p>
           )}
         </div>
       </div>

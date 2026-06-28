@@ -24,35 +24,35 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Manage Users</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Users</h1>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Name</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Role</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Joined</th>
+            <tr className="border-b border-gray-100 dark:border-slate-700">
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Role</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Joined</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-50 dark:divide-slate-700">
             {users.map((u) => (
               <tr key={u.id}>
-                <td className="px-4 py-3 text-sm font-medium text-gray-900">{u.name}</td>
-                <td className="px-4 py-3 text-sm text-gray-500">{u.email ?? '—'}</td>
+                <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{u.name}</td>
+                <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{u.email ?? '—'}</td>
                 <td className="px-4 py-3">
                   <select
                     value={u.role}
                     onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                    className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="px-2 py-1 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="user">User</option>
                     <option value="technician">Technician</option>
                     <option value="admin">Admin</option>
                   </select>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-400">
+                <td className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
                   {new Date(u.created_at).toLocaleDateString()}
                 </td>
               </tr>
